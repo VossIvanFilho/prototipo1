@@ -8,21 +8,30 @@ import html2canvas from 'html2canvas';
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-export default function BarChart() {
-  const [chartData, setChartData] = useState({
+export default function BarChart({ selectedProducts }: { selectedProducts: string[] }) {
+  interface ChartData {
+    labels: string[];
+    datasets: {
+      label: string;
+      data: number[];
+      backgroundColor: string;
+    }[];
+  }
+
+  const [chartData, setChartData] = useState<ChartData>({
     labels: [],
     datasets: [],
   });
 
   useEffect(() => {
-    // Simulate fetching data
+    // Simulate fetching data based on selectedProducts
     const fetchData = async () => {
       const data = {
-        labels: ['January', 'February', 'March', 'April'],
+        labels: selectedProducts,
         datasets: [
           {
             label: 'Sales',
-            data: [50, 100, 150, 200],
+            data: selectedProducts.map(() => Math.floor(Math.random() * 200)),
             backgroundColor: 'rgba(75, 192, 192, 0.6)',
           },
         ],
@@ -31,7 +40,7 @@ export default function BarChart() {
     };
 
     fetchData();
-  }, []);
+  }, [selectedProducts]);
 
   const exportToPDF = async () => {
     const doc = new jsPDF();

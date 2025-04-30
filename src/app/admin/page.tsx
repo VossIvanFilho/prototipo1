@@ -2,6 +2,7 @@
 
 import { useState, ChangeEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Button from "../../components/Button";
 
 interface Product {
   id: number;
@@ -69,32 +70,42 @@ export default function AdminPanel() {
   };
 
   const handleAddProduct = () => {
-    if (!newProduct.product || !newProduct.quantity) {
-      alert('Produto e quantidade são obrigatórios!');
+    if (!newProduct.product.trim()) {
+      alert('O nome do produto é obrigatório!');
+      return;
+    }
+
+    if (newProduct.quantity <= 0) {
+      alert('A quantidade deve ser maior que zero!');
+      return;
+    }
+
+    if (newProduct.unitPrice <= 0) {
+      alert('O preço unitário deve ser maior que zero!');
       return;
     }
 
     const quantity = parseInt(newProduct.quantity.toString(), 10);
-    const unitPrice = parseFloat(newProduct.unitPrice.toString().replace(',', '.')) || 0; // Default to 0 if not provided
+    const unitPrice = parseFloat(newProduct.unitPrice.toString().replace(',', '.')) || 0;
     const total = quantity * unitPrice;
 
-    setData((prevData) => [
-      ...prevData,
-      {
-        id: prevData.length + 1,
-        product: newProduct.product,
-        quantity,
-        unitPrice,
-        total,
-        startDate: newProduct.startDate || null,
-        endDate: newProduct.endDate || null,
-      },
-    ]);
+    const newProductData = {
+      id: data.length + 1,
+      product: newProduct.product,
+      quantity,
+      unitPrice,
+      total,
+      startDate: newProduct.startDate || null,
+      endDate: newProduct.endDate || null,
+    };
+
+    setData((prevData) => [...prevData, newProductData]);
+
+    // Save full product details to localStorage
+    const updatedProducts = [...data, newProductData];
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
 
     setNewProduct({ product: '', quantity: 0, unitPrice: 0, startDate: '', endDate: '', total: 0, id: 0 });
-
-    // Save updated data to localStorage
-    localStorage.setItem('products', JSON.stringify([...data, newProduct]));
   };
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -126,25 +137,18 @@ export default function AdminPanel() {
 
   return (
     <main className={`min-h-screen p-6 bg-gradient-to-r from-[var(--background)] to-[var(--background)] text-[var(--foreground)] dark:from-[var(--background-dark)] dark:to-[var(--background-dark)]`}>
-      <button
+      <Button
         onClick={() => router.back()}
-        className="mb-4 px-4 py-2 bg-[var(--background-light)] text-[var(--foreground)] rounded hover:bg-[var(--background-hover)]"
+        className="mb-4 bg-[var(--background-light)] text-[var(--foreground)] hover:bg-[var(--background-hover)]"
       >
         Voltar
-      </button>
-      <button
-        onClick={toggleTheme}
-        className="absolute top-4 right-4 bg-[var(--background-light)] dark:bg-[var(--background-dark)] p-2 rounded-full shadow-md hover:bg-[var(--background-hover)] dark:hover:bg-[var(--background-hover-dark)]"
-        aria-label="Alternar tema"
-      >
-        {/* Removed sun and moon icons */}
-      </button>
-      <button
+      </Button>
+      <Button
         onClick={() => router.push('/admin/statistics')}
         className="bg-[var(--primary)] text-[var(--background)] px-4 py-2 rounded shadow hover:bg-[var(--secondary)] transition mb-4"
       >
         Ver Estatísticas em Tempo Real
-      </button>
+      </Button>
       <h1 className="text-3xl font-extrabold text-[var(--primary)] mb-6 text-center">Painel Administrativo</h1>
       <p className="text-center text-[var(--foreground)] mb-8">Gerencie suas vendas e visualize estatísticas detalhadas de forma simples e intuitiva.</p>
 
@@ -206,12 +210,12 @@ export default function AdminPanel() {
                 className="border border-[var(--border)] p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-[var(--primary)] text-[var(--foreground)] bg-[var(--background)]"
               />
             </div>
-            <button
+            <Button
               onClick={handleAddProduct}
               className="bg-[var(--primary)] text-[var(--background)] px-4 py-2 rounded shadow hover:bg-[var(--secondary)] transition"
             >
               Adicionar Produto
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -234,23 +238,23 @@ export default function AdminPanel() {
                 <tr key={item.id} className="hover:bg-[var(--background-hover)]">
                   <td className="px-4 py-2 border-b border-[var(--border)]">{item.product}</td>
                   <td className="px-4 py-2 border-b border-[var(--border)]">{item.quantity}</td>
-                  <td className="px-4 py-2 border-b border-[var(--border)]">R${item.unitPrice.toFixed(2).replace('.', ',')}</td>
-                  <td className="px-4 py-2 border-b border-[var(--border)]">R${item.total.toFixed(2).replace('.', ',')}</td>
+                  <td className="px-4 py-2 border-b border-[var(--border)]">R${item.unitPrice ? item.unitPrice.toFixed(2).replace('.', ',') : '0,00'}</td>
+                  <td className="px-4 py-2 border-b border-[var(--border)]">R${item.total ? item.total.toFixed(2).replace('.', ',') : '0,00'}</td>
                   <td className="px-4 py-2 border-b border-[var(--border)]">{item.startDate || '-'}</td>
                   <td className="px-4 py-2 border-b border-[var(--border)]">{item.endDate || '-'}</td>
                   <td className="px-4 py-2 border-b border-[var(--border)]">
-                    <button
+                    <Button
                       onClick={() => handleEditProduct(item)}
                       className="text-[var(--primary)] hover:text-[var(--secondary)] mr-2"
                     >
                       ✏️
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => setShowConfirmDelete({ show: true, productId: item.id })}
                       className="text-[var(--danger)] hover:text-[var(--danger-hover)]"
                     >
                       🗑️
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -264,18 +268,18 @@ export default function AdminPanel() {
           <div className="bg-[var(--background)] p-6 rounded shadow-md text-center">
             <p className="mb-4">Tem certeza que deseja excluir este produto?</p>
             <div className="flex justify-center space-x-4">
-              <button
+              <Button
                 onClick={() => handleDeleteProduct(showConfirmDelete.productId!)}
                 className="bg-[var(--danger)] text-[var(--background)] px-4 py-2 rounded hover:bg-[var(--danger-hover)]"
               >
                 Sim
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setShowConfirmDelete({ show: false, productId: null })}
                 className="bg-[var(--background-light)] text-[var(--foreground)] px-4 py-2 rounded hover:bg-[var(--background-hover)]"
               >
                 Cancelar
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -321,18 +325,18 @@ export default function AdminPanel() {
               </div>
             </div>
             <div className="flex justify-center space-x-4 mt-4">
-              <button
+              <Button
                 onClick={handleSaveEdit}
                 className="bg-[var(--primary)] text-[var(--background)] px-4 py-2 rounded hover:bg-[var(--secondary)]"
               >
                 Salvar
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setEditProduct(null)}
                 className="bg-[var(--background-light)] text-[var(--foreground)] px-4 py-2 rounded hover:bg-[var(--background-hover)]"
               >
                 Cancelar
-              </button>
+              </Button>
             </div>
           </div>
         </div>

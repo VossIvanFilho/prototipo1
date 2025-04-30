@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Button from "../../components/Button";
 
 type Product = {
   id: number;
@@ -29,19 +30,25 @@ export default function Compras() {
   }, []);
 
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
+    const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+    setCart(storedProducts);
   }, []);
 
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
+  const updateGlobalProductList = (product: Product) => {
+    const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+    if (!storedProducts.includes(product.name)) {
+      localStorage.setItem('products', JSON.stringify([...storedProducts, product.name]));
+    }
+  };
+
   const addToCart = (product: Product, unitCost?: number) => {
     const productToAdd = { ...product, productionCost: unitCost ?? product.productionCost };
     setCart([...cart, productToAdd]);
+    updateGlobalProductList(productToAdd);
   };
 
   const removeFromCart = (productId: number) => {
@@ -50,31 +57,31 @@ export default function Compras() {
 
   return (
     <main className={`min-h-screen p-6 bg-gradient-to-r from-[var(--background)] to-[var(--background)] text-[var(--foreground)] dark:from-[var(--background-dark)] dark:to-[var(--background-dark)]`}>
-      <button
+      <Button
         onClick={() => router.back()}
-        className="mb-4 px-4 py-2 bg-[var(--background-light)] text-[var(--foreground)] rounded shadow-lg hover:bg-[var(--background-hover)] hover:shadow-xl transition-all"
+        className="mb-4 bg-[var(--background-light)] text-[var(--foreground)] hover:bg-[var(--background-hover)]"
       >
         Voltar
-      </button>
+      </Button>
       <h1 className="text-2xl font-bold mb-4 text-[var(--foreground)]">
         Protótipo de Vendas
       </h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 responsive-grid">
         {products.map((product) => (
           <div
             key={product.id}
             className="p-4 rounded shadow bg-[var(--background)] text-[var(--foreground)] hover:shadow-lg transition-all"
           >
             <h2 className="text-lg font-bold text-[var(--foreground)]">{product.name}</h2>
-            <p className="text-[var(--foreground)]">Preço: ${product.price.toFixed(2)}</p>
+            <p className="text-[var(--foreground)]">Preço: ${product.price?.toFixed(2) || '0.00'}</p>
             <p className="text-[var(--foreground)]">Adicionado em: {product.dateAdded}</p>
-            <p className="text-[var(--foreground)]">Custo de Produção: ${product.productionCost.toFixed(2)}</p>
-            <button
+            <p className="text-[var(--foreground)]">Custo de Produção: ${product.productionCost?.toFixed(2) || '0.00'}</p>
+            <Button
               onClick={() => addToCart(product)}
-              className="mt-2 px-4 py-2 bg-[var(--primary)] text-[var(--background)] rounded shadow-lg hover:bg-[var(--secondary)] hover:shadow-xl transition-all"
+              className="mt-2 bg-[var(--primary)] text-[var(--background)] hover:bg-[var(--secondary)]"
             >
               Comprar Agora
-            </button>
+            </Button>
           </div>
         ))}
       </div>
@@ -86,13 +93,13 @@ export default function Compras() {
           <ul>
             {cart.map((item) => (
               <li key={item.id} className="flex justify-between items-center text-[var(--foreground)]">
-                {item.name} - ${item.price.toFixed(2)}
-                <button
+                {item.name} - ${item.price?.toFixed(2) || '0.00'}
+                <Button
                   onClick={() => removeFromCart(item.id)}
-                  className="ml-4 px-2 py-1 bg-[var(--secondary)] text-[var(--background)] rounded hover:bg-[var(--primary)]"
+                  className="ml-4 bg-[var(--secondary)] text-[var(--background)] hover:bg-[var(--primary)]"
                 >
                   Remover
-                </button>
+                </Button>
               </li>
             ))}
           </ul>

@@ -1,83 +1,73 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { Bar } from 'react-chartjs-2';
+import { jsPDF } from 'jspdf';
+import 'chart.js/auto';
 
-const BarChart = dynamic(() => import('./BarChart'), { ssr: false });
-const PieChart = dynamic(() => import('./PieChart'), { ssr: false });
+interface Product {
+  product: string;
+  quantity: number;
+  total: number;
+}
 
-export default function Statistics() {
-  const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [products, setProducts] = useState<string[]>([]);
-  const router = useRouter();
+const StatisticsPage = () => {
+  const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    // Fetch products from localStorage or an API
     const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
-    setProducts(storedProducts);
+    const validProducts = storedProducts.map((product: Product) => ({
+      ...product,
+      quantity: product.quantity || 0,
+      total: product.total || 0,
+    }));
+    setProducts(validProducts);
   }, []);
 
-  const handleChartTypeChange = (type: 'bar' | 'pie') => {
-    setChartType(type);
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Estatísticas de Produtos', 10, 10);
+
+    let y = 20;
+    products.forEach((product, index) => {
+      doc.text(`${index + 1}. Produto: ${product.product}, Quantidade: ${product.quantity}, Receita: R$${product.total}`, 10, y);
+      y += 10;
+    });
+
+    doc.save('estatisticas.pdf');
   };
 
-  const handleProductSelection = (product: string) => {
-    setSelectedProducts((prev) =>
-      prev.includes(product)
-        ? prev.filter((p) => p !== product)
-        : [...prev, product]
-    );
+  const chartData = {
+    labels: products.map((product) => product.product),
+    datasets: [
+      {
+        label: 'Quantidade Vendida',
+        data: products.map((product) => product.quantity),
+        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+      },
+      {
+        label: 'Receita Total',
+        data: products.map((product) => product.total),
+        backgroundColor: 'rgba(153, 102, 255, 0.6)',
+      },
+    ],
   };
 
   return (
-    <main className="min-h-screen p-6 bg-gradient-to-r from-[var(--background)] to-[var(--background)] text-[var(--foreground)] dark:from-[var(--background-dark)] dark:to-[var(--background-dark)]">
-      <button
-        onClick={() => router.back()}
-        className="mb-4 px-4 py-2 bg-[var(--background-light)] text-[var(--foreground)] rounded shadow-lg hover:bg-[var(--background-hover)] hover:shadow-xl transition-all"
-      >
-        Voltar
-      </button>
-      <h1 className="text-2xl font-bold mb-4 text-[var(--foreground)]">Estatísticas em Tempo Real</h1>
-
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-4">Estatísticas de Produtos</h1>
       <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">Selecione os produtos:</h2>
-        <div className="flex flex-wrap gap-2">
-          {products.map((product) => (
-            <button
-              key={product}
-              onClick={() => handleProductSelection(product)}
-              className={`px-4 py-2 rounded ${selectedProducts.includes(product) ? 'bg-[var(--primary)] text-[var(--background)]' : 'bg-[var(--background-light)] text-[var(--foreground)]'} hover:bg-[var(--secondary)] transition`}
-            >
-              {product}
-            </button>
-          ))}
-        </div>
+        <Bar data={chartData} />
       </div>
-
-      <div className="flex justify-center space-x-4 mb-6">
-        <button
-          onClick={() => handleChartTypeChange('bar')}
-          className={`px-4 py-2 rounded ${chartType === 'bar' ? 'bg-[var(--primary)] text-[var(--background)]' : 'bg-[var(--background-light)] text-[var(--foreground)]'} hover:bg-[var(--secondary)] transition`}
-        >
-          Gráfico de Barras
-        </button>
-        <button
-          onClick={() => handleChartTypeChange('pie')}
-          className={`px-4 py-2 rounded ${chartType === 'pie' ? 'bg-[var(--primary)] text-[var(--background)]' : 'bg-[var(--background-light)] text-[var(--foreground)]'} hover:bg-[var(--secondary)] transition`}
-        >
-          Gráfico de Pizza
-        </button>
-      </div>
-
-      <div className="chart-container">
-        {selectedProducts.length > 0 ? (
-          chartType === 'bar' ? <BarChart selectedProducts={selectedProducts} /> : <PieChart selectedProducts={selectedProducts} />
-        ) : (
-          <p className="text-center text-[var(--foreground)]">Selecione pelo menos um produto para visualizar as estatísticas.</p>
-        )}
-      </div>
-    </main>
+      <button
+        onClick={exportToPDF}
+        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+      >
+        Exportar para PDF
+      </button>
+    </div>
   );
-}
+};
+
+export default StatisticsPage;

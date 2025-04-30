@@ -8,20 +8,29 @@ import html2canvas from 'html2canvas';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-export default function PieChart() {
-  const [chartData, setChartData] = useState({
+interface ChartData {
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    backgroundColor: string[];
+  }[];
+}
+
+export default function PieChart({ selectedProducts }: { selectedProducts: string[] }) {
+  const [chartData, setChartData] = useState<ChartData>({
     labels: [],
     datasets: [],
   });
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = {
-        labels: ['January', 'February', 'March', 'April'],
+      const data: ChartData = {
+        labels: selectedProducts,
         datasets: [
           {
             label: 'Sales',
-            data: [50, 100, 150, 200],
+            data: selectedProducts.map(() => Math.floor(Math.random() * 200)),
             backgroundColor: [
               'rgba(255, 99, 132, 0.6)',
               'rgba(54, 162, 235, 0.6)',
@@ -35,12 +44,12 @@ export default function PieChart() {
     };
 
     fetchData();
-  }, []);
+  }, [selectedProducts]);
 
   const exportToPDF = async () => {
     const doc = new jsPDF();
     const chartElement = document.querySelector('canvas');
-    if (chartElement) {
+    if (chartElement && chartData.labels.length > 0 && chartData.datasets.length > 0) {
       const canvas = await html2canvas(chartElement);
       const imgData = canvas.toDataURL('image/png');
 
@@ -57,7 +66,10 @@ export default function PieChart() {
       doc.setFontSize(10);
       doc.text('Data Summary:', 15, 140);
       chartData.labels.forEach((label, index) => {
-        doc.text(`${label}: ${chartData.datasets[0].data[index]}`, 15, 150 + index * 10);
+        const dataValue = chartData.datasets[0]?.data[index];
+        if (dataValue !== undefined) {
+          doc.text(`${label}: ${dataValue}`, 15, 150 + index * 10);
+        }
       });
 
       // Add footer
@@ -65,6 +77,8 @@ export default function PieChart() {
       doc.text('Page 1 of 1', 105, 290, { align: 'center' });
 
       doc.save('statistics_report.pdf');
+    } else {
+      console.error('Chart data is not available or chart element is missing.');
     }
   };
 

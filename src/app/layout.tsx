@@ -2,7 +2,6 @@
 
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { useEffect, useState } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,19 +18,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    // Define o modo claro como padrão
-    setIsDarkMode(false);
-    document.documentElement.classList.remove("dark");
-    localStorage.setItem("theme", "light");
-  }, []);
-
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`antialiased ${geistSans.variable} ${geistMono.variable}`}
       >
         {children}
       </body>
